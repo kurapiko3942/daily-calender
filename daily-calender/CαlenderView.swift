@@ -13,41 +13,62 @@
 //
 
 import SwiftUI
+import Combine
+
+import SwiftUI
 
 struct CalendarView: View {
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var showingNoteEditor = false
     @State private var showingSearchView = false
+    @State private var showingDetailedNoteEditor = false
+    @State private var quickNote: String = ""
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                themeManager.currentTheme.background
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 20) {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                VStack(spacing: geometry.size.height * 0.02) {
                     Text(viewModel.currentMonthYear)
-                        .font(.custom("Avenir-Heavy", size: 24))
-                        .padding()
+                        .font(.custom("Avenir-Heavy", size: geometry.size.height * 0.03))
+                        .padding(geometry.size.height * 0.01)
                         .background(Capsule().fill(themeManager.currentTheme.headerBackground))
                     
                     WeekdaysView()
+                        .frame(height: geometry.size.height * 0.05)
                     
                     DaysGridView(showingNoteEditor: $showingNoteEditor)
+                        .frame(height: geometry.size.height * 0.5)
                     
-                    NavigationControlView()
+                    if let selectedDate = viewModel.selectedDate {
+                        QuickNoteView(date: selectedDate, quickNote: $quickNote, showingDetailedNoteEditor: $showingDetailedNoteEditor)
+                            .frame(height: geometry.size.height * 0.15)
+                            .transition(.move(edge: .bottom))
+                    }
                 }
-                .padding()
+                .padding(.top, geometry.safeAreaInsets.top)
+                
+                Spacer()
+                
+//                NavigationControlView()
+                    .frame(height: geometry.size.height * 0.08)
+                    .padding(.bottom, geometry.safeAreaInsets.bottom)
             }
-            .navigationBarItems(trailing: Button(action: { showingSearchView = true }) {
-                Image(systemName: "magnifyingglass")
-            })
+            .padding(.horizontal, geometry.size.width * 0.05)
+            .background(themeManager.currentTheme.background.edgesIgnoringSafeArea(.all))
         }
-        .sheet(isPresented: $showingNoteEditor) {
+        .navigationBarItems(trailing: Button(action: { showingSearchView = true }) {
+            Image(systemName: "magnifyingglass")
+        })
+        .navigationBarTitle("", displayMode: .inline)
+        .sheet(isPresented: $showingDetailedNoteEditor) {
             if let selectedDate = viewModel.selectedDate {
-                NoteEditorView(date: selectedDate, note: viewModel.notes[selectedDate] ?? "",
-                               onSave: viewModel.saveNote)
+                NoteEditorView(
+                    date: selectedDate,
+                    note: viewModel.notes[selectedDate]?.detailedNote ?? ""
+                ) { newNote in
+                    viewModel.saveDetailedNote(for: selectedDate, note: newNote)
+                }
             }
         }
         .sheet(isPresented: $showingSearchView) {
@@ -129,25 +150,81 @@ private struct DayCellView: View {
     }
 }
 
-private struct NavigationControlView: View {
+//private struct NavigationControlView: View {
+//    @EnvironmentObject private var viewModel: CalendarViewModel
+//    @EnvironmentObject private var themeManager: ThemeManager
+//    
+//    var body: some View {
+//        HStack {
+//            Button(action: viewModel.previousMonth) {
+//                Image(systemName: "chevron.left")
+//            }
+//            Spacer()
+//            Button(action: viewModel.nextMonth) {
+//                Image(systemName: "chevron.right")
+//            }
+//        }
+//        .padding()
+//        .background(themeManager.currentTheme.navigationBackground)
+//        .cornerRadius(10)
+//        .foregroundColor(themeManager.currentTheme.darkText)
+//    }
+//}
+
+
+struct QuickNoteView: View {
+    let date: Date
+    @Binding var quickNote: String
+    @Binding var showingDetailedNoteEditor: Bool
     @EnvironmentObject private var viewModel: CalendarViewModel
-    @EnvironmentObject private var themeManager: ThemeManager
+    @State private var keyboardHeight: CGFloat = 0
+    @FocusState private var isQuickNoteFocused: Bool
     
     var body: some View {
-        HStack {
-            Button(action: viewModel.previousMonth) {
-                Image(systemName: "chevron.left")
+        VStack(alignment: .leading, spacing: 10) {
+            Text(date, style: .date)
+                .font(.headline)
+            
+            TextField("Quick note (25 characters max)", text: $quickNote)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .focused($isQuickNoteFocused)
+                .onChange(of: quickNote) { _, newValue in
+                    if newValue.count > 25 {
+                        quickNote = String(newValue.prefix(25))
+                    }
+                    viewModel.saveQuickNote(for: date, note: quickNote)
+                }
+            
+            if let detailedNote = viewModel.notes[date]?.detailedNote, !detailedNote.isEmpty {
+                Text("つまびらか:")
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                Text(detailedNote)
+                    .font(.subheadline)
+                    .lineLimit(3)
+                    .truncationMode(.tail)
             }
-            Spacer()
-            Button(action: viewModel.nextMonth) {
-                Image(systemName: "chevron.right")
+            
+            Button(action: {
+                showingDetailedNoteEditor = true
+            }) {
+                Text("編集")
+                    .font(.subheadline)
+                    .foregroundColor(.blue)
             }
         }
         .padding()
-        .background(themeManager.currentTheme.navigationBackground)
-        .cornerRadius(10)
-        .foregroundColor(themeManager.currentTheme.darkText)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.gray.opacity(0.1)))
+        .padding(.horizontal)
+        .padding(.bottom, keyboardHeight)
+        .animation(.easeOut(duration: 0.16), value: keyboardHeight)
+        .onReceive(Publishers.keyboardHeight) { self.keyboardHeight = $0 }
+        .onTapGesture {
+            isQuickNoteFocused = false
+        }
+        
     }
+    
 }
 
 #Preview {

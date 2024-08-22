@@ -11,7 +11,11 @@ import SwiftUI
 class CalendarViewModel: ObservableObject {
     @Published var currentDate = Date()
     @Published var selectedDate: Date?
-    @Published var notes: [Date: String] = [:]
+    @Published var notes: [Date: Note] = [:] {
+        didSet {
+            saveNotes()
+        }
+    }
     
     let calendar = Calendar.current
     private let dateFormatter: DateFormatter = {
@@ -19,6 +23,10 @@ class CalendarViewModel: ObservableObject {
         formatter.dateFormat = "MMMM yyyy"
         return formatter
     }()
+    
+    init() {
+        loadNotes()
+    }
     
     var currentMonthYear: String {
         dateFormatter.string(from: currentDate)
@@ -41,10 +49,12 @@ class CalendarViewModel: ObservableObject {
                (0..<trailingSpaces).map { _ in nil }
     }
     
+    //
     func isToday(_ date: Date) -> Bool {
         calendar.isDateInToday(date)
     }
     
+    //
     func isSelectedDate(_ date: Date) -> Bool {
         selectedDate.map { calendar.isDate($0, inSameDayAs: date) } ?? false
     }
@@ -57,13 +67,21 @@ class CalendarViewModel: ObservableObject {
         currentDate = calendar.date(byAdding: .month, value: 1, to: currentDate)!
     }
     
-    func saveNote(for date: Date, note: String) {
-        if !note.isEmpty {
-            notes[date] = note
-        } else {
-            notes.removeValue(forKey: date)
+    func saveQuickNote(for date: Date, note: String) {
+            if let existingNote = notes[date] {
+                notes[date] = Note(id: existingNote.id, quickNote: note, detailedNote: existingNote.detailedNote, date: date)
+            } else {
+                notes[date] = Note(quickNote: note, date: date)
+            }
         }
-    }
+        
+        func saveDetailedNote(for date: Date, note: String) {
+            if let existingNote = notes[date] {
+                notes[date] = Note(id: existingNote.id, quickNote: existingNote.quickNote, detailedNote: note, date: date)
+            } else {
+                notes[date] = Note(detailedNote: note, date: date)
+            }
+        }
     
     func dateBackgroundColor(for date: Date, theme: CalendarTheme) -> Color {
         if isSelectedDate(date) {
@@ -82,4 +100,23 @@ class CalendarViewModel: ObservableObject {
             return theme.darkText
         }
     }
+    
+    private func saveNotes() {
+            do {
+                let data = try JSONEncoder().encode(notes)
+                UserDefaults.standard.set(data, forKey: "savedNotes")
+            } catch {
+                print("Failed to save notes: \(error.localizedDescription)")
+            }
+        }
+        
+        private func loadNotes() {
+            guard let data = UserDefaults.standard.data(forKey: "savedNotes") else { return }
+            do {
+                let decodedNotes = try JSONDecoder().decode([Date: Note].self, from: data)
+                notes = decodedNotes
+            } catch {
+                print("Failed to load notes: \(error.localizedDescription)")
+            }
+        }
 }
