@@ -1,8 +1,14 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = CalendarViewModel()
     @StateObject private var themeManager = ThemeManager()
+    @StateObject private var viewModel: CalendarViewModel
+
+    init() {
+        let themeManager = ThemeManager()
+        self._themeManager = StateObject(wrappedValue: themeManager)
+        self._viewModel = StateObject(wrappedValue: CalendarViewModel(themeManager: themeManager))
+    }
 
     var body: some View {
         TabView {
@@ -26,7 +32,8 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
 }
-

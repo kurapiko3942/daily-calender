@@ -10,6 +10,7 @@ import SwiftUI
 import Combine
 
 struct CalendarView: View {
+    
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
     @State private var showingNoteEditor = false
@@ -17,7 +18,7 @@ struct CalendarView: View {
     @State private var showingDetailedNoteEditor = false
     @State private var showingYearMonthPicker = false
     @State private var quickNote: String = ""
-    
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -31,13 +32,13 @@ struct CalendarView: View {
                                 .padding(geometry.size.height * 0.01)
                                 .background(Capsule().fill(themeManager.currentTheme.headerBackground))
                         }
-                        
+
                         WeekdaysView()
                             .frame(height: geometry.size.height * 0.05)
-                        
+
                         DaysGridView(showingNoteEditor: $showingNoteEditor)
                             .frame(height: geometry.size.height * 0.5)
-                        
+
                         if let selectedDate = viewModel.selectedDate {
                             QuickNoteView(date: selectedDate, quickNote: $quickNote, showingDetailedNoteEditor: $showingDetailedNoteEditor)
                                 .frame(height: geometry.size.height * 0.15)
@@ -45,11 +46,11 @@ struct CalendarView: View {
                         }
                     }
                     .padding(.top, geometry.safeAreaInsets.top)
-                    
+
                     Spacer()
                 }
                 .padding(.horizontal, geometry.size.width * 0.05)
-                
+
                 if showingYearMonthPicker {
                     YearMonthPickerView(date: $viewModel.currentDate, isPresented: $showingYearMonthPicker)
                         .background(Color.black.opacity(0.3))
@@ -75,6 +76,14 @@ struct CalendarView: View {
         .sheet(isPresented: $showingSearchView) {
             SearchView(notes: viewModel.notes)
         }
+        .onChange(of: viewModel.selectedDate) { _, newValue in
+            print("Selected date changed to \(newValue?.description ?? "nil")")
+            if let date = newValue {
+                quickNote = viewModel.notes[date]?.quickNote ?? ""
+            } else {
+                quickNote = ""
+            }
+        }
     }
 }
 
@@ -83,7 +92,7 @@ struct YearMonthPickerView: View {
     @Binding var isPresented: Bool
     @State private var selectedYear: Int
     @State private var selectedMonth: Int
-    
+
     init(date: Binding<Date>, isPresented: Binding<Bool>) {
         _date = date
         _isPresented = isPresented
@@ -91,7 +100,7 @@ struct YearMonthPickerView: View {
         _selectedYear = State(initialValue: calendar.component(.year, from: date.wrappedValue))
         _selectedMonth = State(initialValue: calendar.component(.month, from: date.wrappedValue))
     }
-    
+
     var body: some View {
         VStack {
             HStack {
@@ -103,7 +112,7 @@ struct YearMonthPickerView: View {
                 .pickerStyle(WheelPickerStyle())
                 .frame(width: 100)
                 .clipped()
-                
+
                 Picker("月", selection: $selectedMonth) {
                     ForEach((1...12), id: \.self) { month in
                         Text("\(month)月").tag(month)
@@ -114,15 +123,15 @@ struct YearMonthPickerView: View {
                 .clipped()
             }
             .padding()
-            
+
             HStack {
                 Button("キャンセル") {
                     isPresented = false
                 }
                 .padding()
-                
+
                 Spacer()
-                
+
                 Button("決定") {
                     let calendar = Calendar.current
                     if let newDate = calendar.date(from: DateComponents(year: selectedYear, month: selectedMonth)) {
@@ -142,7 +151,7 @@ struct YearMonthPickerView: View {
 private struct WeekdaysView: View {
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
-    
+
     var body: some View {
         HStack {
             ForEach(viewModel.weekdays, id: \.self) { day in
@@ -159,7 +168,7 @@ private struct DaysGridView: View {
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
     @Binding var showingNoteEditor: Bool
-    
+
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
             ForEach(viewModel.days(), id: \.self) { date in
@@ -178,9 +187,10 @@ private struct DayCellView: View {
     @Binding var showingNoteEditor: Bool
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
-    
+
     var body: some View {
         Button(action: {
+            print("Date selected: \(date)")
             viewModel.selectedDate = date
             showingNoteEditor = true
         }) {
@@ -219,12 +229,12 @@ struct QuickNoteView: View {
     @EnvironmentObject private var viewModel: CalendarViewModel
     @State private var keyboardHeight: CGFloat = 0
     @FocusState private var isQuickNoteFocused: Bool
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(date, style: .date)
                 .font(.headline)
-            
+
             TextField("Quick note (25 characters max)", text: $quickNote)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($isQuickNoteFocused)
@@ -234,7 +244,7 @@ struct QuickNoteView: View {
                     }
                     viewModel.saveQuickNote(for: date, note: quickNote)
                 }
-            
+
             Button(action: {
                 showingDetailedNoteEditor = true
             }) {
@@ -255,19 +265,12 @@ struct QuickNoteView: View {
     }
 }
 
-extension CalendarViewModel {
-    var currentMonthYearJapanese: String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "ja_JP")
-        dateFormatter.dateFormat = "yyyy/M月"
-        return dateFormatter.string(from: currentDate)
-    }
-}
 
-// KeyboardHeightPublisher extension (既存のコードを使用)
 
 #Preview {
-    CalendarView()
-        .environmentObject(CalendarViewModel())
-        .environmentObject(ThemeManager())
+    let themeManager = ThemeManager()
+    let viewModel = CalendarViewModel(themeManager: themeManager)
+    return CalendarView()
+        .environmentObject(viewModel)
+        .environmentObject(themeManager)
 }

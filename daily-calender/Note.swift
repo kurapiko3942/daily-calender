@@ -7,9 +7,8 @@
 
 import Foundation
 
-
 struct Note: Codable, Identifiable {
-    var id: UUID
+    var id = UUID()
     var quickNote: String
     var detailedNote: String
     var date: Date

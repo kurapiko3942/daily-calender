@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Foundation
 
 struct SearchView: View {
     let notes: [Date: Note]
