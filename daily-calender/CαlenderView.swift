@@ -10,35 +10,39 @@ import SwiftUI
 import Combine
 
 struct CalendarView: View {
-    
+    // 環境オブジェクト: ビューモデルとテーママネージャー
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
-    @State private var showingNoteEditor = false
-    @State private var showingSearchView = false
-    @State private var showingDetailedNoteEditor = false
-    @State private var showingYearMonthPicker = false
-    @State private var quickNote: String = ""
-
+    
+    // UI状態を管理するための状態変数
+    @State private var showingNoteEditor = false // ノートエディタの表示状態
+    @State private var showingSearchView = false // 検索ビューの表示状態
+    @State private var showingDetailedNoteEditor = false // 詳細ノートエディタの表示状態
+    @State private var showingYearMonthPicker = false // 年月ピッカーの表示状態
+    @State private var quickNote: String = "" // クイックノートの内容
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 VStack(spacing: 0) {
                     VStack(spacing: geometry.size.height * 0.02) {
-                        Button(action: {
-                            showingYearMonthPicker = true
-                        }) {
+                        // 年月表示ボタン: タップで年月ピッカーを表示
+                        Button(action: { showingYearMonthPicker = true }) {
                             Text(viewModel.currentMonthYearJapanese)
                                 .font(.custom("Avenir-Heavy", size: geometry.size.height * 0.03))
                                 .padding(geometry.size.height * 0.01)
                                 .background(Capsule().fill(themeManager.currentTheme.headerBackground))
                         }
-
+                        
+                        // 曜日表示: 週の曜日を表示
                         WeekdaysView()
                             .frame(height: geometry.size.height * 0.05)
-
+                        
+                        // 日付グリッド: 月のカレンダーを表示
                         DaysGridView(showingNoteEditor: $showingNoteEditor)
                             .frame(height: geometry.size.height * 0.5)
-
+                        
+                        // クイックノート: 選択された日付がある場合に表示
                         if let selectedDate = viewModel.selectedDate {
                             QuickNoteView(date: selectedDate, quickNote: $quickNote, showingDetailedNoteEditor: $showingDetailedNoteEditor)
                                 .frame(height: geometry.size.height * 0.15)
@@ -46,11 +50,12 @@ struct CalendarView: View {
                         }
                     }
                     .padding(.top, geometry.safeAreaInsets.top)
-
+                    
                     Spacer()
                 }
                 .padding(.horizontal, geometry.size.width * 0.05)
-
+                
+                // 年月ピッカー: showingYearMonthPickerがtrueの時に表示
                 if showingYearMonthPicker {
                     YearMonthPickerView(date: $viewModel.currentDate, isPresented: $showingYearMonthPicker)
                         .background(Color.black.opacity(0.3))
@@ -59,10 +64,12 @@ struct CalendarView: View {
             }
             .background(themeManager.currentTheme.background.edgesIgnoringSafeArea(.all))
         }
+        // ナビゲーションバーの設定: 検索ボタンを追加
         .navigationBarItems(trailing: Button(action: { showingSearchView = true }) {
             Image(systemName: "magnifyingglass")
         })
         .navigationBarTitle("", displayMode: .inline)
+        // 詳細ノートエディタのシート表示
         .sheet(isPresented: $showingDetailedNoteEditor) {
             if let selectedDate = viewModel.selectedDate {
                 NoteEditorView(
@@ -73,9 +80,11 @@ struct CalendarView: View {
                 }
             }
         }
+        // 検索ビューのシート表示
         .sheet(isPresented: $showingSearchView) {
             SearchView(notes: viewModel.notes)
         }
+        // 選択された日付の変更を監視し、クイックノートを更新
         .onChange(of: viewModel.selectedDate) { _, newValue in
             print("Selected date changed to \(newValue?.description ?? "nil")")
             if let date = newValue {
@@ -87,12 +96,14 @@ struct CalendarView: View {
     }
 }
 
+// 年月ピッカービュー: ユーザーが年と月を選択するためのビュー
 struct YearMonthPickerView: View {
-    @Binding var date: Date
-    @Binding var isPresented: Bool
-    @State private var selectedYear: Int
-    @State private var selectedMonth: Int
-
+    @Binding var date: Date // 選択された日付
+    @Binding var isPresented: Bool // ピッカーの表示状態
+    @State private var selectedYear: Int // 選択された年
+    @State private var selectedMonth: Int // 選択された月
+    
+    // イニシャライザ: 現在の日付から年と月を初期化
     init(date: Binding<Date>, isPresented: Binding<Bool>) {
         _date = date
         _isPresented = isPresented
@@ -100,10 +111,11 @@ struct YearMonthPickerView: View {
         _selectedYear = State(initialValue: calendar.component(.year, from: date.wrappedValue))
         _selectedMonth = State(initialValue: calendar.component(.month, from: date.wrappedValue))
     }
-
+    
     var body: some View {
         VStack {
             HStack {
+                // 年選択ピッカー
                 Picker("年", selection: $selectedYear) {
                     ForEach((1970...2070), id: \.self) { year in
                         Text("\(year)年").tag(year)
@@ -112,7 +124,8 @@ struct YearMonthPickerView: View {
                 .pickerStyle(WheelPickerStyle())
                 .frame(width: 100)
                 .clipped()
-
+                
+                // 月選択ピッカー
                 Picker("月", selection: $selectedMonth) {
                     ForEach((1...12), id: \.self) { month in
                         Text("\(month)月").tag(month)
@@ -123,15 +136,17 @@ struct YearMonthPickerView: View {
                 .clipped()
             }
             .padding()
-
+            
             HStack {
+                // キャンセルボタン
                 Button("キャンセル") {
                     isPresented = false
                 }
                 .padding()
-
+                
                 Spacer()
-
+                
+                // 決定ボタン: 選択された年月を適用
                 Button("決定") {
                     let calendar = Calendar.current
                     if let newDate = calendar.date(from: DateComponents(year: selectedYear, month: selectedMonth)) {
@@ -148,10 +163,11 @@ struct YearMonthPickerView: View {
     }
 }
 
+// 曜日表示ビュー: 週の曜日を表示
 private struct WeekdaysView: View {
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
-
+    
     var body: some View {
         HStack {
             ForEach(viewModel.weekdays, id: \.self) { day in
@@ -164,11 +180,12 @@ private struct WeekdaysView: View {
     }
 }
 
+// 日付グリッドビュー: 月のカレンダーを表示
 private struct DaysGridView: View {
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
     @Binding var showingNoteEditor: Bool
-
+    
     var body: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
             ForEach(viewModel.days(), id: \.self) { date in
@@ -182,12 +199,13 @@ private struct DaysGridView: View {
     }
 }
 
+// 日付セルビュー: 個々の日付を表示
 private struct DayCellView: View {
     let date: Date
     @Binding var showingNoteEditor: Bool
     @EnvironmentObject private var viewModel: CalendarViewModel
     @EnvironmentObject private var themeManager: ThemeManager
-
+    
     var body: some View {
         Button(action: {
             print("Date selected: \(date)")
@@ -222,6 +240,7 @@ private struct DayCellView: View {
     }
 }
 
+// クイックノートビュー: 選択された日付のクイックノートを表示・編集
 struct QuickNoteView: View {
     let date: Date
     @Binding var quickNote: String
@@ -229,12 +248,12 @@ struct QuickNoteView: View {
     @EnvironmentObject private var viewModel: CalendarViewModel
     @State private var keyboardHeight: CGFloat = 0
     @FocusState private var isQuickNoteFocused: Bool
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(date, style: .date)
                 .font(.headline)
-
+            
             TextField("Quick note (25 characters max)", text: $quickNote)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .focused($isQuickNoteFocused)
@@ -244,7 +263,7 @@ struct QuickNoteView: View {
                     }
                     viewModel.saveQuickNote(for: date, note: quickNote)
                 }
-
+            
             Button(action: {
                 showingDetailedNoteEditor = true
             }) {
@@ -265,8 +284,7 @@ struct QuickNoteView: View {
     }
 }
 
-
-
+// プレビュー: SwiftUI プレビュー用のコード
 #Preview {
     let themeManager = ThemeManager()
     let viewModel = CalendarViewModel(themeManager: themeManager)
