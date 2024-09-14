@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		00EB98122C846F2600AD1567 /* SettingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00EB98112C846F2600AD1567 /* SettingView.swift */; };
+		38628DBD2C93E79200C767C4 /* ColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38628DBC2C93E79200C767C4 /* ColumnView.swift */; };
+		38628DBF2C93EB1000C767C4 /* TutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38628DBE2C93EB1000C767C4 /* TutorialView.swift */; };
 		387B84D92C7714A000465D3A /* KeyboardHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387B84D82C7714A000465D3A /* KeyboardHelpers.swift */; };
 		388542252C6A3B72004C2B14 /* daily_calenderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388542242C6A3B72004C2B14 /* daily_calenderApp.swift */; };
 		388542272C6A3B72004C2B14 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388542262C6A3B72004C2B14 /* ContentView.swift */; };
@@ -42,6 +44,8 @@
 
 /* Begin PBXFileReference section */
 		00EB98112C846F2600AD1567 /* SettingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingView.swift; sourceTree = "<group>"; };
+		38628DBC2C93E79200C767C4 /* ColumnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColumnView.swift; sourceTree = "<group>"; };
+		38628DBE2C93EB1000C767C4 /* TutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialView.swift; sourceTree = "<group>"; };
 		387B84D82C7714A000465D3A /* KeyboardHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelpers.swift; sourceTree = "<group>"; };
 		388542212C6A3B72004C2B14 /* daily-calender.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "daily-calender.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		388542242C6A3B72004C2B14 /* daily_calenderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = daily_calenderApp.swift; sourceTree = "<group>"; };
@@ -120,6 +124,8 @@
 				38859D902C708F8A00042DE9 /* ThemeManager.swift */,
 				38BF97B62C76BD5600F49211 /* Note.swift */,
 				387B84D82C7714A000465D3A /* KeyboardHelpers.swift */,
+				38628DBC2C93E79200C767C4 /* ColumnView.swift */,
+				38628DBE2C93EB1000C767C4 /* TutorialView.swift */,
 			);
 			path = "daily-calender";
 			sourceTree = "<group>";
@@ -285,8 +291,10 @@
 				388542272C6A3B72004C2B14 /* ContentView.swift in Sources */,
 				388542252C6A3B72004C2B14 /* daily_calenderApp.swift in Sources */,
 				38859D8B2C708F1A00042DE9 /* NoteEditorView.swift in Sources */,
+				38628DBF2C93EB1000C767C4 /* TutorialView.swift in Sources */,
 				38859D912C708F8A00042DE9 /* ThemeManager.swift in Sources */,
 				387B84D92C7714A000465D3A /* KeyboardHelpers.swift in Sources */,
+				38628DBD2C93E79200C767C4 /* ColumnView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
